@@ -1,4 +1,4 @@
-import { MessageEvent } from '../usecases/message-event'
+import { MessageEvent } from './message-event'
 
 export interface FinalUserModel {
   name?: string;

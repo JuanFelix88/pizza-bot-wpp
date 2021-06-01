@@ -1,5 +1,5 @@
 import { Message, Whatsapp } from 'venom-bot'
-import { FinalUserModel } from '../models/final-user'
+import { FinalUserModel } from './final-user'
 
 export interface MessageEvent {
   fromUser: FinalUserModel;

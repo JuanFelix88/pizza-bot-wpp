@@ -5,12 +5,15 @@ export const config: CreateOptions = {
   folderNameToken: 'tokens', // folder name when saving tokens
   mkdirFolderToken: '', // folder directory tokens, just inside the venom folder, example:  { mkdirFolderToken: '/node_modules', } //will save the tokens folder in the node_modules directory
   headless: false, // Headless chrome
-  useChrome: false, // If false will use Chromium instance
+  useChrome: true, // If false will use Chromium instance
   debug: false, // Opens a debug session
   logQR: false, // Logs QR automatically in terminal
   browserWS: '', // If u want to use browserWSEndpoint
   browserArgs: [''], // Parameters to be added into the chrome browser instance
   puppeteerOptions: {
+    handleSIGINT: false,
+    handleSIGHUP: false,
+    handleSIGTERM: false
 
   }, // Will be passed to puppeteer.launch
   disableSpins: true, // Will disable Spinnies animation, useful for containers (docker) for a better log

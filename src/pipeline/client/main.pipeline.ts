@@ -1,9 +1,22 @@
-import { MessageEvent } from '@/domain/usecases/message-event'
+import { MessageEvent } from '@/domain/models/message-event'
+import { Pipeline } from '@/domain/models/pipeline'
+import { log } from '@/shared/helpers/log.helper'
 import { Whatsapp } from 'venom-bot'
-import { getMessagesFromUserHelper } from '@/infra/persistent-message/get-messages-from-user'
+import { menuPipeline } from './menu.pipeline'
+import { welcomePipeline } from './welcome.pipeline'
 
 export async function mainPipeline (client: Whatsapp, messageEvent: MessageEvent) {
-  const textData = messageEvent.text
+  const tasksPipelines = [
+    welcomePipeline,
+    menuPipeline
+  ] as const
 
-  const userMessages = await getMessagesFromUserHelper.getAllFromUser(messageEvent.fromUser.identifier)
+  // menu
+  for (const pipeline of tasksPipelines) {
+    const { error, processed }: Pipeline.Result = await pipeline(client, messageEvent)
+    log`{red ${pipeline.name}}`
+    console.log({ error, processed })
+    if (error) throw new Error(error)
+    if (processed) break
+  }
 }

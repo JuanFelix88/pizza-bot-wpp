@@ -5,7 +5,7 @@ class ClearMessage {
     const dataFormatted = data.trim()
       .replace(/(@|\.|,)/g, '')
 
-    if (dataFormatted.length < 3) { throw new BadMessageFormat() }
+    if (dataFormatted.length <= 1) { throw new BadMessageFormat() }
 
     return dataFormatted
   }

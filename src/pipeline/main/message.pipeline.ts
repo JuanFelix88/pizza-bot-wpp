@@ -1,15 +1,20 @@
 import { log } from '@/shared/helpers/log.helper'
 import { clearMessage } from '@/infra/processors/clear-message'
-import { verifyMessageTag } from '@/infra/validators/verify-message-tag'
-import { InvalidMessageTag } from '@/presentation/errors/invalid-message-tag'
 import { createMessageEvent } from '@/presentation/middlewares/create-message-event'
 import { Message, Whatsapp } from 'venom-bot'
+import { mainPipeline } from '../client/main.pipeline'
 
 export async function messagePipeline (client: Whatsapp, message: Message) {
   try {
     const messageEvent = createMessageEvent.create(client, message)
 
-    if (messageEvent.isMedia) {
+    const { identifier: userIdentifier } = messageEvent.fromUser
+
+    if (
+      messageEvent.isMedia || (
+        userIdentifier !== '554187851739@c.us' &&
+        userIdentifier !== '554196610629@c.us'
+      )) {
       return log`{red Mensagem ignorada de: {blue ${messageEvent.fromUser.identifier}}}`
     }
 
@@ -17,10 +22,9 @@ export async function messagePipeline (client: Whatsapp, message: Message) {
 
     const dataText = clearMessage.processMessage(messageEvent.message.body)
 
-    if (!verifyMessageTag.testMessage(dataText)) { throw new InvalidMessageTag() }
-
-    messageEvent.text = dataText
-  } catch (error) {
-
-  }
+    mainPipeline(client, {
+      ...messageEvent,
+      text: dataText
+    })
+  } catch (error) { log`{red ${error}}` }
 }
