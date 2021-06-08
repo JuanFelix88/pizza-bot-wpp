@@ -10,11 +10,14 @@ export async function messagePipeline (client: Whatsapp, message: Message) {
 
     const { identifier: userIdentifier } = messageEvent.fromUser
 
+    const { isGroupMsg } = messageEvent.message
+
     if (
       messageEvent.isMedia || (
         userIdentifier !== '554187851739@c.us' &&
-        userIdentifier !== '554196610629@c.us'
-      )) {
+        userIdentifier !== '554196610629@c.us' &&
+        userIdentifier !== '554195153598@c.us'
+      ) || isGroupMsg) {
       return log`{red Mensagem ignorada de: {blue ${messageEvent.fromUser.identifier}}}`
     }
 

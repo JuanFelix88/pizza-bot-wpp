@@ -4,8 +4,10 @@ import { PipelineResult } from '@/domain/models/pipeline-result'
 import { insertMessageInCache } from '@/infra/persistent-message/insert-message-in-cache'
 import { Whatsapp } from 'venom-bot'
 import { renderMenuMessage } from './templates/menu.message'
+import { renderMenuQuestionMessage } from './templates/question-menu.message'
+import { setTimeout } from 'timers/promises'
 
-export function menuPipeline (client: Whatsapp, messageEvent: MessageEvent): Pipeline.Result {
+export async function menuPipeline (client: Whatsapp, messageEvent: MessageEvent): Promise<Pipeline.Result> {
   const { identifier: userIdentifier } = messageEvent.fromUser
   const dataText = messageEvent.text
 
@@ -19,7 +21,13 @@ export function menuPipeline (client: Whatsapp, messageEvent: MessageEvent): Pip
 
   if (textMatchHashTag && dataText.length <= 15) {
     const menuMessage = renderMenuMessage()
+    const menuQuestionMessage = renderMenuQuestionMessage()
+
     client.sendText(userIdentifier, menuMessage)
+
+    await setTimeout(1900)
+
+    client.sendText(userIdentifier, menuQuestionMessage)
 
     insertMessageInCache.add(userIdentifier, dataText)
 

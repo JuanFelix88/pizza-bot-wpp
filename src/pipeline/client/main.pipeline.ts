@@ -3,12 +3,14 @@ import { Pipeline } from '@/domain/models/pipeline'
 import { log } from '@/shared/helpers/log.helper'
 import { Whatsapp } from 'venom-bot'
 import { menuPipeline } from './menu.pipeline'
+import { orderPipeline } from './order.pipeline'
 import { welcomePipeline } from './welcome.pipeline'
 
 export async function mainPipeline (client: Whatsapp, messageEvent: MessageEvent) {
   const tasksPipelines = [
     welcomePipeline,
-    menuPipeline
+    menuPipeline,
+    orderPipeline
   ] as const
 
   // menu

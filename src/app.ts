@@ -7,4 +7,4 @@ const venom: typeof Venom = (require('venom-bot') as any)
 
 venom.create(config)
   .then(client => setDarkThemePipeline(client))
-  .then(client => client.onAnyMessage(message => messagePipeline(client, message)))
+  .then(client => client.onMessage(message => messagePipeline(client, message)))

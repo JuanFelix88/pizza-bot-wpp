@@ -1,4 +1,4 @@
-import { MessageEvent } from '@/domain/usecases/message-event'
+import { MessageEvent } from '@/domain/models/message-event'
 import { Message, Whatsapp } from 'venom-bot'
 
 class CreateMessageEvent {

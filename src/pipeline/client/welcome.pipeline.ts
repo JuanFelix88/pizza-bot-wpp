@@ -1,6 +1,6 @@
 import { PipelineResult } from '@/domain/models/pipeline-result'
-import { MessageEvent } from '@/domain/usecases/message-event'
-import { Pipeline } from '@/domain/usecases/pipeline'
+import { MessageEvent } from '@/domain/models/message-event'
+import { Pipeline } from '@/domain/models/pipeline'
 import { getMessagesFromUserHelper } from '@/infra/persistent-message/get-messages-from-user'
 import { insertMessageInCache } from '@/infra/persistent-message/insert-message-in-cache'
 import { log } from '@/shared/helpers/log.helper'
