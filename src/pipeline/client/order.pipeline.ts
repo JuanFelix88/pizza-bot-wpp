@@ -6,6 +6,7 @@ import { getMessagesFromUserHelper } from '@/infra/persistent-message/get-messag
 import { processOrder } from '@/infra/process-messages/process-order'
 import { renderOrderPizzaItemsMessages } from './templates/orderPizzaItems.message'
 import { insertContextInUser } from '@/infra/persistent-context/insert-context-in-user'
+import { renderOrderPizzasQuestionsMessage } from './templates/orderPizzasQuestions.message'
 
 export async function orderPipeline (client: Whatsapp, messageEvent: MessageEvent): Promise<Pipeline.Result> {
   const dataText = messageEvent.text as string
@@ -30,11 +31,31 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
 
     const orderPizzaMessages = renderOrderPizzaItemsMessages(pizzas)
 
-    for (const pizzaMessage of orderPizzaMessages) { await client.sendText(userIdentifier, pizzaMessage) }
+    const messages = (await Promise.all(
+      orderPizzaMessages.reverse().map(async pizzaMessage => await client
+        .sendText(userIdentifier, pizzaMessage)
+      ))).reverse()
+
+    const questionsPizzasOrders = renderOrderPizzasQuestionsMessage(pizzas)
+
+    for (const index in questionsPizzasOrders) {
+      const questionMessage = questionsPizzasOrders[index]
+      if (!questionMessage) continue
+
+      await client.reply(
+        userIdentifier,
+        questionMessage,
+        (messages[index] as any).to._serialized
+      )
+    }
+
+    if (questionsPizzasOrders.filter(item => !!item).length === 0) {
+      client.sendText(userIdentifier, `Você poder confirmar seu${pizzas.length > 1 ? 's' : ''} pedido${pizzas.length > 1 ? 's' : ''} informando sim ou não.`)
+    } else {
+      client.sendText(userIdentifier, 'Você pode acrescentar algo se preferir.')
+    }
 
     insertContextInUser.add(userIdentifier, 'order', { pizzas })
-
-    client.sendText(userIdentifier, 'Você poder confirmar seu(s) pedido(s) informando sim ou não.')
 
     return new PipelineResult(true)
   } else {

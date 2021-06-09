@@ -19,7 +19,7 @@ class TastesIdentifiers {
     [15, 'Calabresa']
   ]
 
-  private tastesAdaptersMessageMap:TastesIdentifiers.TastesAdaptersMap[] = [
+  private tastesAdaptersMessageMap: TastesIdentifiers.TastesAdaptersMap[] = [
     [12, /frang(o)? ((com|de) )?ch(e){1,2}(d){1,2}a(r)?/ig],
     [13, /(frang(o)? ((com|de) )?catup(i|y)r(i|y)?|calabr(e)?s(a)? ((com|de) )?catup(i|y)r(i|y)?)/ig],
     [15, /calabr(e)?s(a)? ((com|de) )?catup(i|y)r(i|y)?/ig]
@@ -66,7 +66,7 @@ class TastesIdentifiers {
       const adaptedMessage = this.adaptMessage(message, numberTaste)
 
       // eslint-disable-next-line no-useless-escape
-      const regexNumberTaste = createRegexp(` (0)?${numberTaste}(\s|$)`)
+      const regexNumberTaste = createRegexp(`^(.*\\s|^)?(0)?${numberTaste}(\\s.*|$)$`)
       const hasTasteNumber = regexNumberTaste.test(adaptedMessage)
       const hasMentionTaste = testTaste.test(adaptedMessage)
 

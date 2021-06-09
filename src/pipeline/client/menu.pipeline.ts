@@ -17,7 +17,7 @@ export async function menuPipeline (client: Whatsapp, messageEvent: MessageEvent
     })
   }
 
-  const textMatchHashTag = /(#cardápio|#cardapio|#cardapo|#cardpio|#cerdpio|#cerdapo)/.test(dataText)
+  const textMatchHashTag = /((#)?(cardápio|cardapio|cardapo|cardpio|cerdpio|cerdapo))/i.test(dataText)
 
   if (textMatchHashTag && dataText.length <= 15) {
     const menuMessage = renderMenuMessage()
