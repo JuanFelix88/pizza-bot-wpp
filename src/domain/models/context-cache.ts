@@ -8,6 +8,6 @@ export namespace ContextCache {
   export type Type = 'initial' | 'menu' | 'order'
   export type From = string
   export type Data = {
-    [key in ContextCache.Type]?: object;
+    [key in ContextCache.Type]?: any;
   }
 }

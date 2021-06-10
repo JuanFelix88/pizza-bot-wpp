@@ -8,7 +8,7 @@ class ProcessOrder {
   private regexTestToRepairMessage =
     /(e uma|e também|e tambem|e outra|mais uma|ai vou querer uma|querer outra|quero uma)/i
 
-  public async loadMessage (message: string): Promise<ProcessOrder.Result> {
+  public async loadMessage (message: string): Promise<ProcessOrder.Result[]> {
     const {
       regexTestToRepairMessage
     } = this
@@ -33,17 +33,17 @@ class ProcessOrder {
     return pizzas.filter(item => item.size || item.tastes.length > 0)
   }
 
-  private getPizzaSize (message: string): (Order.Pizza.Size | undefined) {
+  public getPizzaSize (message: string): (Order.Pizza.Size | undefined) {
     return this.pizzaSizes.getPizzaSizeByMessage(message)
   }
 
-  private getPizzaTastesNumbers (message: string): number[] {
+  public getPizzaTastesNumbers (message: string): number[] {
     return this.tastesIdentifiers.getTastesNumbersByMessage(message)
   }
 }
 
 export namespace ProcessOrder {
-  export type Result = Order.Pizza[]
+  export type Result = Order.Pizza
 }
 
 export const processOrder = new ProcessOrder()
