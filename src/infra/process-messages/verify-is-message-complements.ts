@@ -1,11 +1,11 @@
 class VerifyIsMessageComplements {
   private tests = [
     /(sabor(es)?|quero mais|mais uma|adicio(n)?ar|acrescenta(r)?)/i,
-    /(Pizz?a [0-9]{1,3})/ig
+    /Pizz?a [0-9]{1,3}/i
   ]
 
-  public test (string: string): boolean {
-    return !!this.tests.find(regex => regex.test(string))
+  public test (text: string): boolean {
+    return !!this.tests.find(regex => regex.test(text))
   }
 }
 

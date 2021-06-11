@@ -23,7 +23,11 @@ export async function welcomePipeline (client: Whatsapp, messageEvent: MessageEv
   if (oldMessagesUser.length === 0) {
     const welcomeMessage = renderWelcomeMessage()
 
-    client.sendText(messageEvent.fromUser.identifier, welcomeMessage)
+    await client.sendText(messageEvent.fromUser.identifier, welcomeMessage)
+    await client.sendText(messageEvent.fromUser.identifier, 'Veja o que eu posso fazer:\n\n' +
+      '👉 *#cardápio* para eu lhe mostrar o cardápio\n' +
+      '👉 *#falar* para eu chamar alguém para lhe atender'
+    )
     insertMessageInCache.add(messageEvent.fromUser.identifier, dataText)
 
     return new PipelineResult(true, { userStateChanged: true })

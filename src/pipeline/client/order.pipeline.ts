@@ -31,10 +31,28 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
   const context = await getContextUser.get<PizzaOrderContext>(userIdentifier)
 
   console.log({
-    actualContext: context
+    actualContext: context,
+    order: context?.data.order
   })
 
   const isComplementaryMessage = verifyIsMessageComplements.test(dataText)
+
+  console.log([
+    context?.name === 'order',
+    isComplementaryMessage,
+    context?.data.order?.pizzas,
+    context?.data.order.pizzas && context?.data.order.pizzas.length > 0
+  ])
+
+  if (
+    context?.name === 'order' &&
+    !isComplementaryMessage &&
+    context.data.order?.pizzas &&
+    context.data.order.pizzas.length > 0
+  ) {
+    await client.sendText(userIdentifier, 'Não entendi sua mensagem, pode repetir com outras referências?')
+    return new PipelineResult(false)
+  }
 
   if (
     context?.name === 'order' &&
@@ -76,6 +94,11 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
     })
 
     const orderPizzaMessages = renderOrderPizzaItemsMessages(newPizzaOrders)
+
+    await client.sendText(
+      userIdentifier,
+      'Certo, veja como ficou os pedidos:'
+    )
 
     const messages = await forAwaitEach(orderPizzaMessages)(
       async pizzaMessage => await client
