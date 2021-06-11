@@ -2,11 +2,11 @@ import { ContextCache } from '@/domain/models/context-cache'
 import { contextsCacheMap } from './context-cache-map'
 
 export class InsertContextInUser {
-  protected contextCacheMap = contextsCacheMap
+  private contextCacheMap = contextsCacheMap
 
-  public async add<T extends keyof ContextCache.Data>
-  (user: ContextCache.From, name: T, data: ContextCache.Data[T]): Promise<ContextCache> {
-    const existentContext = this.contextCacheMap.get(user)
+  public async add<T>
+  (from: ContextCache.From, name: keyof ContextCache.Data, data: T): Promise<ContextCache<T>> {
+    const existentContext = this.contextCacheMap.get(from)
 
     const context: ContextCache =
       existentContext
@@ -24,9 +24,9 @@ export class InsertContextInUser {
             }
           }
 
-    this.contextCacheMap.set(user, context)
+    this.contextCacheMap.set(from, context)
 
-    return context
+    return context as ContextCache<T>
   }
 }
 

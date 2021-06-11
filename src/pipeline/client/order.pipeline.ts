@@ -11,36 +11,68 @@ import { forAwaitEach } from '@/shared/helpers/for-await-each.helper'
 import { getContextUser } from '@/infra/persistent-context/get-context-user'
 import { complementsQuestionsOrders } from '@/infra/process-messages/complements-questions-orders'
 import { Order } from '@/domain/models/order'
+import { verifyIsMessageComplements } from '@/infra/process-messages/verify-is-message-complements'
+
+namespace PizzaOrderContext {
+  export interface Order {
+    pizzas?: Order.Pizza[], questionsPizzasOrders?: (string | undefined)[]
+  }
+}
+
+interface PizzaOrderContext {
+  order: PizzaOrderContext.Order
+}
 
 export async function orderPipeline (client: Whatsapp, messageEvent: MessageEvent): Promise<Pipeline.Result> {
   const dataText = messageEvent.text as string
 
   const { identifier: userIdentifier } = messageEvent.fromUser
 
-  const context = await getContextUser.get(userIdentifier)
+  const context = await getContextUser.get<PizzaOrderContext>(userIdentifier)
+
+  console.log({
+    actualContext: context
+  })
+
+  const isComplementaryMessage = verifyIsMessageComplements.test(dataText)
 
   if (
     context?.name === 'order' &&
-    context
-      ?.data?.order
-      ?.questionsPizzasOrders
-      ?.length > 0
+    isComplementaryMessage &&
+    context.data.order?.pizzas &&
+    context.data.order.pizzas.length > 0
   ) {
     const pizzasOrders = context.data.order.pizzas as Order.Pizza[]
 
     const complementsActualOrders = await complementsQuestionsOrders.loadMessage(dataText)
 
+    console.log({ complementsActualOrders })
+
     const newPizzaOrders = pizzasOrders.map((pizzaOrder, indexOrder) => {
       const complement = complementsActualOrders.find(item => item.indexOrder === indexOrder)
       if (complement) {
+        const newTastes = processOrder.getPizzaTastesNumbers(complement.message)
+        const { tastes } = pizzaOrder
+
+        newTastes.forEach(item => {
+          if (typeof tastes.find(i => item === i) !== 'number') {
+            tastes.push(item)
+          }
+        })
+
         return {
           ...pizzaOrder,
-          price: processOrder.getPizzaSize(complement.message) || pizzaOrder.price,
-          tastes: [...pizzaOrder.tastes, ...processOrder.getPizzaTastesNumbers(complement.message)]
+          size: processOrder.getPizzaSize(complement.message) || pizzaOrder.size,
+          tastes
         } as Order.Pizza
       } else {
         return pizzaOrder
       }
+    })
+
+    console.log({
+      pizzasOrders,
+      newPizzaOrders
     })
 
     const orderPizzaMessages = renderOrderPizzaItemsMessages(newPizzaOrders)
@@ -71,7 +103,11 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
       client.sendText(userIdentifier, 'Você pode acrescentar algo se preferir.')
     }
 
-    insertContextInUser.add(userIdentifier, 'order', { newPizzaOrders, questionsPizzasOrders })
+    await insertContextInUser.add<PizzaOrderContext.Order>(
+      userIdentifier,
+      'order',
+      { pizzas: newPizzaOrders as Order.Pizza[], questionsPizzasOrders }
+    )
 
     return new PipelineResult(true)
   }
@@ -112,7 +148,11 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
       client.sendText(userIdentifier, 'Você pode acrescentar algo se preferir.')
     }
 
-    insertContextInUser.add(userIdentifier, 'order', { pizzas, questionsPizzasOrders })
+    await insertContextInUser.add<PizzaOrderContext.Order>(
+      userIdentifier,
+      'order',
+      { pizzas, questionsPizzasOrders }
+    )
 
     return new PipelineResult(true)
   } else {

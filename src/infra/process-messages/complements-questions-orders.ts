@@ -21,19 +21,45 @@ class ComplementsQuestionsOrders {
     }))
   }
 
+  protected parseIntPizzaReferenceMessage (message: string): number {
+    return parseInt(message.replace(/.*([0-9]).*/, '$1'), 10)
+  }
+
   protected repairMessage (message: string): [number, string, string][] {
-    const matches = /(Pizz?a [0-9]{1,3})/ig.exec(message)
+    if (
+      !/(Pizz?a [0-9]{1,3})/ig.test(message)
+    ) return []
 
-    if (!matches) return []
+    const splicedMessage = message
+      .split(/(Pizz?a [0-9]{1,3})/ig)
+      .filter(item => !!item)
 
-    const splicedMessage = message.split(/(Piz(z)?a [0-9]{1,3})/ig)
+    const splicedContextMessage: [number, string, string][] = []
 
-    return [...matches]
-      .map((literalOrder, index) => [
-        (parseInt(literalOrder.replace(/[0-9]{1,3}/, '$1'), 10) - 1),
-        literalOrder,
-        splicedMessage[index]
-      ])
+    for (
+      let index = 0;
+      index <= splicedMessage.length;
+      index++
+    ) {
+      const item = splicedMessage[index]
+
+      const isPizzaReference = index % 2 === 0 && /(Pizz?a [0-9]{1,3})/i.test(item)
+
+      const subsequentItem = splicedMessage[index + 1]
+
+      if (isPizzaReference && subsequentItem) {
+        const parsedInt = this.parseIntPizzaReferenceMessage(item)
+
+        splicedContextMessage.push([
+          parsedInt - 1,
+          item,
+          subsequentItem
+        ])
+      }
+    }
+
+    return splicedContextMessage
+      .sort(([a], [b]) => a > b ? 1 : -1)
   }
 }
 

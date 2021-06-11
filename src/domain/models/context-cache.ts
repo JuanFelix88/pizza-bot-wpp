@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
-export interface ContextCache {
+export interface ContextCache<T = ContextCache.Data> {
   name: ContextCache.Type
-  data: ContextCache.Data
+  data: T
 }
 
 export namespace ContextCache {
