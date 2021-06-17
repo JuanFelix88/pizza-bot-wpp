@@ -1,3 +1,7 @@
+type IndexOrder = number
+type LiteralIndex = string
+type MessageComplement = string
+
 class ComplementsQuestionsOrders {
   private isComplementsMessageRegexp = [
     /(adiciona(r)?|quero (.){0,3} mais|mais um)/i,
@@ -25,7 +29,11 @@ class ComplementsQuestionsOrders {
     return parseInt(message.replace(/.*([0-9]).*/, '$1'), 10)
   }
 
-  protected repairMessage (message: string): [number, string, string][] {
+  protected testIsPizzaReference (message: string): boolean {
+    return /(Pizz?a [0-9]{1,3})/i.test(message)
+  }
+
+  protected repairMessage (message: string): [IndexOrder, LiteralIndex, MessageComplement][] {
     if (
       !/(Pizz?a [0-9]{1,3})/ig.test(message)
     ) return []
@@ -43,18 +51,22 @@ class ComplementsQuestionsOrders {
     ) {
       const item = splicedMessage[index]
 
-      const isPizzaReference = index % 2 === 0 && /(Pizz?a [0-9]{1,3})/i.test(item)
+      const isPizzaReference = this.testIsPizzaReference(item)
 
       const subsequentItem = splicedMessage[index + 1]
 
-      if (isPizzaReference && subsequentItem) {
-        const parsedInt = this.parseIntPizzaReferenceMessage(item)
+      if (subsequentItem) {
+        const literalOrder = isPizzaReference ? item : subsequentItem
+        const message = isPizzaReference ? subsequentItem : item
+        const parsedInt = this.parseIntPizzaReferenceMessage(literalOrder)
 
         splicedContextMessage.push([
           parsedInt - 1,
-          item,
-          subsequentItem
+          literalOrder,
+          message
         ])
+
+        index++
       }
     }
 

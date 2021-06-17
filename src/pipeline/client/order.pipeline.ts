@@ -13,13 +13,13 @@ import { complementsQuestionsOrders } from '@/infra/process-messages/complements
 import { Order } from '@/domain/models/order'
 import { verifyIsMessageComplements } from '@/infra/process-messages/verify-is-message-complements'
 
-namespace PizzaOrderContext {
+export namespace PizzaOrderContext {
   export interface Order {
     pizzas?: Order.Pizza[], questionsPizzasOrders?: (string | undefined)[]
   }
 }
 
-interface PizzaOrderContext {
+export interface PizzaOrderContext {
   order: PizzaOrderContext.Order
 }
 
@@ -30,19 +30,18 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
 
   const context = await getContextUser.get<PizzaOrderContext>(userIdentifier)
 
-  console.log({
-    actualContext: context,
-    order: context?.data.order
-  })
-
   const isComplementaryMessage = verifyIsMessageComplements.test(dataText)
 
-  console.log([
-    context?.name === 'order',
-    isComplementaryMessage,
-    context?.data.order?.pizzas,
-    context?.data.order.pizzas && context?.data.order.pizzas.length > 0
-  ])
+  if (
+    context?.name === 'order' &&
+    !isComplementaryMessage &&
+    context.data.order?.pizzas &&
+    context.data.order.pizzas.length > 0 &&
+    /(s(i|í)(m)?|ye(s|p)?|claro|com certeza|concerteza|pode ser|confirmado|)/i.test(dataText) &&
+    !(context?.data.order.questionsPizzasOrders?.filter(item => !!item)?.length)
+  ) {
+    return new PipelineResult(false)
+  }
 
   if (
     context?.name === 'order' &&
@@ -51,7 +50,7 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
     context.data.order.pizzas.length > 0
   ) {
     await client.sendText(userIdentifier, 'Não entendi sua mensagem, pode repetir com outras referências?')
-    return new PipelineResult(false)
+    return new PipelineResult(true)
   }
 
   if (
@@ -66,8 +65,9 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
 
     console.log({ complementsActualOrders })
 
-    const newPizzaOrders = pizzasOrders.map((pizzaOrder, indexOrder) => {
+    const modifiedPizzaOrders = pizzasOrders.map((pizzaOrder, indexOrder) => {
       const complement = complementsActualOrders.find(item => item.indexOrder === indexOrder)
+
       if (complement) {
         const newTastes = processOrder.getPizzaTastesNumbers(complement.message)
         const { tastes } = pizzaOrder
@@ -90,10 +90,10 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
 
     console.log({
       pizzasOrders,
-      newPizzaOrders
+      newPizzaOrders: modifiedPizzaOrders
     })
 
-    const orderPizzaMessages = renderOrderPizzaItemsMessages(newPizzaOrders)
+    const orderPizzaMessages = renderOrderPizzaItemsMessages(modifiedPizzaOrders)
 
     await client.sendText(
       userIdentifier,
@@ -105,7 +105,7 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
         .sendText(userIdentifier, pizzaMessage)
     )
 
-    const questionsPizzasOrders = renderOrderPizzasQuestionsMessage(newPizzaOrders)
+    const questionsPizzasOrders = renderOrderPizzasQuestionsMessage(modifiedPizzaOrders)
 
     for (const index in questionsPizzasOrders) {
       const questionMessage = questionsPizzasOrders[index]
@@ -120,16 +120,16 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
 
     if (questionsPizzasOrders.filter(item => !!item).length === 0) {
       client.sendText(userIdentifier, `Você poder confirmar seu${
-        newPizzaOrders.length > 1 ? 's' : ''} pedido${
-          newPizzaOrders.length > 1 ? 's' : ''} informando sim ou não.`)
+        modifiedPizzaOrders.length > 1 ? 's' : ''} pedido${
+          modifiedPizzaOrders.length > 1 ? 's' : ''} informando sim ou não. Você pode também responder *#esquece* para refazer o pedido.`)
     } else {
-      client.sendText(userIdentifier, 'Você pode acrescentar algo se preferir.')
+      client.sendText(userIdentifier, 'Você pode acrescentar algo se preferir ou então responder *#esquece* para refazer o pedido.')
     }
 
     await insertContextInUser.add<PizzaOrderContext.Order>(
       userIdentifier,
       'order',
-      { pizzas: newPizzaOrders as Order.Pizza[], questionsPizzasOrders }
+      { pizzas: modifiedPizzaOrders as Order.Pizza[], questionsPizzasOrders }
     )
 
     return new PipelineResult(true)
@@ -166,9 +166,9 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
     if (questionsPizzasOrders.filter(item => !!item).length === 0) {
       client.sendText(userIdentifier, `Você poder confirmar seu${
         pizzas.length > 1 ? 's' : ''} pedido${
-          pizzas.length > 1 ? 's' : ''} informando sim ou não.`)
+          pizzas.length > 1 ? 's' : ''} informando sim ou não. Você pode também responder *#esquece* para refazer o pedido.`)
     } else {
-      client.sendText(userIdentifier, 'Você pode acrescentar algo se preferir.')
+      client.sendText(userIdentifier, 'Você pode acrescentar algo se preferir ou então responder *#esquece* para refazer o pedido.')
     }
 
     await insertContextInUser.add<PizzaOrderContext.Order>(

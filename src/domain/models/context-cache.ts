@@ -5,7 +5,7 @@ export interface ContextCache<T = ContextCache.Data> {
 }
 
 export namespace ContextCache {
-  export type Type = 'initial' | 'menu' | 'order'
+  export type Type = 'initial' | 'menu' | 'order' | 'confirm-order'
   export type From = string
   export type Data = {
     [key in ContextCache.Type]?: any;
