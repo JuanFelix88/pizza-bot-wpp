@@ -1,8 +1,10 @@
 import { Order } from '@/domain/models/order'
+import { getPizzaPrice } from './get-pizza-price'
 import { pizzaSizes } from './pizza-sizes'
 import { tastesIdentifiers } from './tastes-identifiers'
 
 class ProcessOrder {
+  private getPizzaPrice = getPizzaPrice
   private tastesIdentifiers = tastesIdentifiers
   private pizzaSizes = pizzaSizes
   private regexTestToRepairMessage =
@@ -24,6 +26,9 @@ class ProcessOrder {
         price: 0,
         size: this.getPizzaSize(message),
         tastes: this.getPizzaTastesNumbers(message)
+      })).map(item => ({
+        ...item,
+        price: this.getPizzaPrice.getInt(item.size, item.tastes)
       }))
 
     return this.filterOnlyValidPizzasOrders(pizzas)

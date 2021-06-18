@@ -6,6 +6,7 @@ import { insertContextInUser } from '@/infra/persistent-context/insert-context-i
 import { Whatsapp } from 'venom-bot'
 import { PizzaOrderContext } from './order.pipeline'
 import { setTimeout } from 'timers/promises'
+import { getPizzaPrice } from '@/infra/process-messages/get-pizza-price'
 
 export interface ConfirmOrderContext {
   'confirm-order': ConfirmOrderContext.ConfirmOrder;
@@ -42,7 +43,7 @@ export async function confirmOrderPipeline (client: Whatsapp, messageEvent: Mess
   }
 
   if (!(/(s(i|í)(m)?|ye(s|p)?|claro|com certeza|concerteza|pode ser|confirmado|)/i.test(dataText) &&
-  !/n(ã|a)o/i.test(dataText))) {
+  !/n(ã|a)o/i.test(dataText)) || !pizzas) {
     return new PipelineResult(true)
   }
 
@@ -51,8 +52,10 @@ export async function confirmOrderPipeline (client: Whatsapp, messageEvent: Mess
   })
 
   await client.sendText(userIdentifier, 'Seu pedido foi confirmado.')
-  await setTimeout(1200)
-  await client.sendText(userIdentifier, 'Estamos processando seu pedido..')
+  await setTimeout(600)
+  const totalPrice = pizzas.map(({ price }) => price).reduce((a, b) => a + b)
+
+  await client.sendText(userIdentifier, `Ficou: ${getPizzaPrice.format(totalPrice)}`)
   await setTimeout(2000)
   await client.sendText(userIdentifier, 'Seu pedido já foi encaminhado para produção, ficará pronto entre 20 à 35 minutinhos 😋')
   await client.sendText(userIdentifier, 'Nós da Pizzaria Lollapalooza agradecemos a preferência! 🤝')

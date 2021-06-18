@@ -12,6 +12,8 @@ import { getContextUser } from '@/infra/persistent-context/get-context-user'
 import { complementsQuestionsOrders } from '@/infra/process-messages/complements-questions-orders'
 import { Order } from '@/domain/models/order'
 import { verifyIsMessageComplements } from '@/infra/process-messages/verify-is-message-complements'
+import { getPizzaPrice } from '@/infra/process-messages/get-pizza-price'
+import { setTimeout } from 'timers/promises'
 
 export namespace PizzaOrderContext {
   export interface Order {
@@ -37,7 +39,23 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
     !isComplementaryMessage &&
     context.data.order?.pizzas &&
     context.data.order.pizzas.length > 0 &&
-    /(s(i|í)(m)?|ye(s|p)?|claro|com certeza|concerteza|pode ser|confirmado|)/i.test(dataText) &&
+    /(#)?esqu(é|e)ce?/i.test(dataText)
+  ) {
+    insertContextInUser.add<PizzaOrderContext.Order>(userIdentifier, 'order', {})
+
+    await client.sendText(userIdentifier, 'Claro, tudo bem!')
+    await setTimeout(400)
+    await client.sendText(userIdentifier, 'Você pode pedir novamente, vamos ver se dessa vez eu entendo rsrs')
+
+    return new PipelineResult(true)
+  }
+
+  if (
+    context?.name === 'order' &&
+    !isComplementaryMessage &&
+    context.data.order?.pizzas &&
+    context.data.order.pizzas.length > 0 &&
+    /(s(i|í)(m)?|ye(s|p)?|claro|com certeza|concerteza|pode ser|confirmado)/i.test(dataText) &&
     !(context?.data.order.questionsPizzasOrders?.filter(item => !!item)?.length)
   ) {
     return new PipelineResult(false)
@@ -78,9 +96,12 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
           }
         })
 
+        const size = processOrder.getPizzaSize(complement.message) || pizzaOrder.size
+
         return {
           ...pizzaOrder,
-          size: processOrder.getPizzaSize(complement.message) || pizzaOrder.size,
+          size,
+          price: getPizzaPrice.getInt(size, tastes),
           tastes
         } as Order.Pizza
       } else {
