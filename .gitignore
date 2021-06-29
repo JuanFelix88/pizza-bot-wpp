@@ -2,3 +2,4 @@ node_modules
 dist
 .env
 tokens/test.data.json
+tokens
