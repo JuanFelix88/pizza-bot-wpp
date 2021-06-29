@@ -3,6 +3,7 @@ export namespace Pipeline {
     processed: boolean;
     userStateChanged?: boolean;
     contextCreated?: boolean;
+    restartPipeline?: boolean;
     error?: any;
   };
 }

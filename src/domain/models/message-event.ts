@@ -14,5 +14,6 @@ export namespace MessageEvent {
   export type TypeMessage =
     | 'text'
     | 'media'
+    | 'location'
     | 'sticker';
 }

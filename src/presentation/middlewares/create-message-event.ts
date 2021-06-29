@@ -8,8 +8,8 @@ class CreateMessageEvent {
         identifier: message.from
       },
       isMedia: message.isMedia,
-      type: 'text',
-      text: message.body,
+      type: message.type as MessageEvent.TypeMessage,
+      text: message.content,
       client,
       message
     }
