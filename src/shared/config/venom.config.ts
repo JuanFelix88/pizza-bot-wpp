@@ -7,7 +7,7 @@ export const config: CreateOptions = {
   headless: true, // Headless chrome
   useChrome: true, // If false will use Chromium instance
   debug: false, // Opens a debug session
-  logQR: false, // Logs QR automatically in terminal
+  logQR: true, // Logs QR automatically in terminal
   browserWS: '', // If u want to use browserWSEndpoint
   browserArgs: [''], // Parameters to be added into the chrome browser instance
   puppeteerOptions: {
