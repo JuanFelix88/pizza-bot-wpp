@@ -1,6 +1,6 @@
 class VerifyIsMessageComplements {
   private tests = [
-    /(sabor(es)?|quero mais|mais uma|adicio(n)?ar|acrescenta(r)?)/i,
+    /(sabor(es)?|tamanho|muda|coloca|po(e|ê|ẽ)m?|quero mais|mais uma|adicio(n)?ar|acrescenta(r)?)/i,
     /Pizz?a [0-9]{1,3}/i
   ]
 
