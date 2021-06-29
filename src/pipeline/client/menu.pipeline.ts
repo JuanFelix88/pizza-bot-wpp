@@ -6,6 +6,22 @@ import { Whatsapp } from 'venom-bot'
 import { renderMenuMessage } from './templates/menu.message'
 import { renderMenuQuestionMessage } from './templates/question-menu.message'
 import { setTimeout } from 'timers/promises'
+import { insertContextInUser } from '@/infra/persistent-context/insert-context-in-user'
+import { getContextUser } from '@/infra/persistent-context/get-context-user'
+
+interface Context {
+  'address'?: Context.Address
+}
+
+namespace Context {
+  export type Address = {
+    lat?: number;
+    long?: number;
+    complete?: string;
+    complement?: string;
+    needsComplement: 'yes' | 'no'
+  }
+}
 
 export async function menuPipeline (client: Whatsapp, messageEvent: MessageEvent): Promise<Pipeline.Result> {
   const { identifier: userIdentifier } = messageEvent.fromUser
@@ -19,7 +35,15 @@ export async function menuPipeline (client: Whatsapp, messageEvent: MessageEvent
 
   const textMatchHashTag = /((#)?(cardápio|cardapio|cardapo|cardpio|cerdpio|cerdapo))/i.test(dataText)
 
-  if (textMatchHashTag && dataText.length <= 15) {
+  const actualContext = await getContextUser.get<Context>(userIdentifier)
+
+  const notNeedsComplement = actualContext?.data.address?.needsComplement === 'no'
+  const hasLatLong = typeof actualContext?.data.address?.lat === 'number' && typeof actualContext?.data.address?.long === 'number'
+  const hasCompleteAddressOrLatLong = hasLatLong || !!actualContext?.data.address?.complete
+  const hasComplement = notNeedsComplement || !!actualContext?.data.address?.complement
+  const hasAddress = hasCompleteAddressOrLatLong && hasComplement
+
+  if (textMatchHashTag && dataText.length <= 15 && hasAddress) {
     const menuMessage = renderMenuMessage()
     const menuQuestionMessage = renderMenuQuestionMessage()
 
@@ -29,11 +53,11 @@ export async function menuPipeline (client: Whatsapp, messageEvent: MessageEvent
 
     client.sendText(userIdentifier, menuQuestionMessage)
 
+    insertContextInUser.add(userIdentifier, 'menu', {})
+
     insertMessageInCache.add(userIdentifier, dataText)
 
-    return new PipelineResult(true, {
-      userStateChanged: true
-    })
+    return PipelineResult.stopPropagation(true)
   } else {
     return new PipelineResult(false)
   }

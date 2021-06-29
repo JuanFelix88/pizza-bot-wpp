@@ -1,3 +1,7 @@
+import { QuotedMessage } from '@/domain/models/quoted-message'
+import { log } from '@/shared/helpers/log.helper'
+import { getPizzaReferenceInQuotedMessage } from './get-pizza-reference-in-quoted-message'
+
 type IndexOrder = number
 type LiteralIndex = string
 type MessageComplement = string
@@ -10,13 +14,14 @@ class ComplementsQuestionsOrders {
   ]
 
   public async loadMessage (
-    message: string
+    message: string,
+    quotedMessage?: QuotedMessage
   ): Promise<ComplementsQuestionsOrders.ComplementOrder[]> {
     const isComplementsMessage = !!this.isComplementsMessageRegexp.find(rgx => rgx.test(message))
 
     if (!isComplementsMessage) return []
 
-    const splicedContextsMessages = this.repairMessage(message)
+    const splicedContextsMessages = this.repairMessage(message, quotedMessage)
 
     return splicedContextsMessages.map(([indexOrder, literalOrder, message]) => ({
       indexOrder,
@@ -33,7 +38,41 @@ class ComplementsQuestionsOrders {
     return /(Pizz?a [0-9]{1,3})/i.test(message)
   }
 
-  protected repairMessage (message: string): [IndexOrder, LiteralIndex, MessageComplement][] {
+  protected testIsQuotedMessagePizzaReference (quotedMessage?: QuotedMessage): boolean {
+    return (!!quotedMessage) && /(Pizz?a [0-9]{1,3})/i.test(quotedMessage.body)
+  }
+
+  protected getUnaryMapReference (
+    index: number,
+    literalOrder: string,
+    message: string):[IndexOrder, LiteralIndex, MessageComplement][] {
+    return [[
+      index,
+      literalOrder,
+      message
+    ]]
+  }
+
+  protected repairMessage (
+    message: string,
+    quotedMessage?: QuotedMessage
+  ): [IndexOrder, LiteralIndex, MessageComplement][] {
+    if (quotedMessage && this.testIsQuotedMessagePizzaReference(quotedMessage)) {
+      const reference = getPizzaReferenceInQuotedMessage.getPizzaReference(quotedMessage)
+
+      log`{cyan é quoted message} e literal: {blue ${reference?.literalOrder}} e index: {green ${reference?.index}}`
+
+      if (reference) {
+        const {
+          index,
+          literalOrder
+        } = reference
+        return this.getUnaryMapReference(index, literalOrder, message)
+      } else {
+        message = quotedMessage.content + message
+      }
+    }
+
     if (
       !/(Pizz?a [0-9]{1,3})/ig.test(message)
     ) return []
@@ -51,7 +90,8 @@ class ComplementsQuestionsOrders {
     ) {
       const item = splicedMessage[index]
 
-      const isPizzaReference = this.testIsPizzaReference(item)
+      const isPizzaReference = this.testIsPizzaReference(item) ||
+        this.testIsQuotedMessagePizzaReference(quotedMessage)
 
       const subsequentItem = splicedMessage[index + 1]
 

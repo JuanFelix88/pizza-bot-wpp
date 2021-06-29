@@ -6,9 +6,12 @@ import { insertMessageInCache } from '@/infra/persistent-message/insert-message-
 import { log } from '@/shared/helpers/log.helper'
 import { Whatsapp } from 'venom-bot'
 import { renderWelcomeMessage } from './templates/welcome.message'
+import { insertContextInUser } from '@/infra/persistent-context/insert-context-in-user'
+import { getContextUser } from '@/infra/persistent-context/get-context-user'
 
 export async function welcomePipeline (client: Whatsapp, messageEvent: MessageEvent): Promise<Pipeline.Result> {
   const dataText = messageEvent.text
+  const userIdentifier = messageEvent.fromUser.identifier
 
   if (!dataText) {
     return new PipelineResult(false, {
@@ -17,20 +20,19 @@ export async function welcomePipeline (client: Whatsapp, messageEvent: MessageEv
   }
 
   const oldMessagesUser = await getMessagesFromUserHelper.getAllFromUser(messageEvent.fromUser.identifier)
+  const userContext = await getContextUser.get(userIdentifier)
 
   log`Enviado de {blue id: ${messageEvent.fromUser.identifier}} | {red Push: ${messageEvent.message.sender.pushname}} texto: {cyan ${dataText}}`
 
-  if (oldMessagesUser.length === 0) {
+  if (oldMessagesUser.length === 0 && userContext?.name !== 'initial') {
     const welcomeMessage = renderWelcomeMessage()
 
     await client.sendText(messageEvent.fromUser.identifier, welcomeMessage)
-    await client.sendText(messageEvent.fromUser.identifier, 'Veja o que eu posso fazer:\n\n' +
-      '👉 *#cardápio* para eu lhe mostrar o cardápio\n' +
-      '👉 *#falar* para eu chamar alguém para lhe atender'
-    )
-    insertMessageInCache.add(messageEvent.fromUser.identifier, dataText)
 
-    return new PipelineResult(true, { userStateChanged: true })
+    insertContextInUser.add(userIdentifier, 'initial', {})
+    insertMessageInCache.add(userIdentifier, dataText)
+
+    return new PipelineResult(false, { userStateChanged: true })
   } else {
     return new PipelineResult(false)
   }

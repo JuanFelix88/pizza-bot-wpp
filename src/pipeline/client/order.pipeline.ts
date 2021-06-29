@@ -79,9 +79,8 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
   ) {
     const pizzasOrders = context.data.order.pizzas as Order.Pizza[]
 
-    const complementsActualOrders = await complementsQuestionsOrders.loadMessage(dataText)
-
-    console.log({ complementsActualOrders })
+    const complementsActualOrders = await complementsQuestionsOrders
+      .loadMessage(dataText, messageEvent.message.quotedMsgObj as any)
 
     const modifiedPizzaOrders = pizzasOrders.map((pizzaOrder, indexOrder) => {
       const complement = complementsActualOrders.find(item => item.indexOrder === indexOrder)
@@ -107,11 +106,6 @@ export async function orderPipeline (client: Whatsapp, messageEvent: MessageEven
       } else {
         return pizzaOrder
       }
-    })
-
-    console.log({
-      pizzasOrders,
-      newPizzaOrders: modifiedPizzaOrders
     })
 
     const orderPizzaMessages = renderOrderPizzaItemsMessages(modifiedPizzaOrders)
